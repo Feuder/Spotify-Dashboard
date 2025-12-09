@@ -1,0 +1,464 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Spotify Dashboard</title>
+    <style>
+      :root {
+        --background: #0f172a;
+        --surface: #111827;
+        --accent: #1db954;
+        --text: #e5e7eb;
+        --muted: #9ca3af;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family: 'Inter', system-ui, -apple-system, sans-serif;
+        background: linear-gradient(180deg, #0b1120 0%, #0f172a 100%);
+        color: var(--text);
+        min-height: 100vh;
+      }
+
+      header {
+        padding: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+      }
+
+      h1 {
+        margin: 0;
+        font-size: 1.6rem;
+        letter-spacing: 0.5px;
+      }
+
+      button,
+      .link-button {
+        background: var(--accent);
+        color: #052e16;
+        border: none;
+        border-radius: 12px;
+        padding: 12px 18px;
+        font-size: 1rem;
+        font-weight: 700;
+        cursor: pointer;
+        transition: transform 0.1s ease, box-shadow 0.2s ease;
+        text-decoration: none;
+        display: inline-block;
+      }
+
+      button:hover,
+      .link-button:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 10px 35px rgba(29, 185, 84, 0.35);
+      }
+
+      button:disabled {
+        cursor: not-allowed;
+        opacity: 0.7;
+      }
+
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 0 24px 48px;
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 16px;
+      }
+
+      .card {
+        background: linear-gradient(180deg, #111827 0%, #0b1224 100%);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        border-radius: 16px;
+        padding: 16px;
+        box-shadow: 0 16px 40px rgba(0, 0, 0, 0.35);
+      }
+
+      .section-title {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        margin-bottom: 12px;
+      }
+
+      .section-title h2 {
+        margin: 0;
+        font-size: 1.1rem;
+        letter-spacing: 0.3px;
+      }
+
+      .muted {
+        color: var(--muted);
+      }
+
+      .profile {
+        display: flex;
+        gap: 16px;
+        align-items: center;
+      }
+
+      .avatar {
+        width: 72px;
+        height: 72px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 2px solid rgba(255, 255, 255, 0.1);
+        background: #0f172a;
+      }
+
+      .list {
+        display: grid;
+        gap: 12px;
+      }
+
+      .list-item {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        padding: 10px;
+        border-radius: 12px;
+        background: rgba(255, 255, 255, 0.02);
+        border: 1px solid rgba(255, 255, 255, 0.03);
+      }
+
+      .list-item img {
+        width: 56px;
+        height: 56px;
+        border-radius: 12px;
+        object-fit: cover;
+        background: #111827;
+      }
+
+      .list-item .title {
+        margin: 0;
+        font-weight: 700;
+      }
+
+      .list-item .subtitle {
+        margin: 2px 0 0;
+        color: var(--muted);
+        font-size: 0.95rem;
+      }
+
+      .chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-top: 8px;
+      }
+
+      .chip {
+        background: rgba(255, 255, 255, 0.06);
+        padding: 6px 10px;
+        border-radius: 999px;
+        color: #cbd5e1;
+        font-size: 0.9rem;
+      }
+
+      .progress {
+        width: 100%;
+        height: 8px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.08);
+        overflow: hidden;
+        margin-top: 8px;
+      }
+
+      .progress span {
+        display: block;
+        height: 100%;
+        background: linear-gradient(90deg, #1db954, #38bdf8);
+      }
+
+      .error {
+        color: #fca5a5;
+        margin: 8px 0 0;
+      }
+
+      .login-state {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .pill {
+        padding: 6px 10px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.08);
+        font-size: 0.9rem;
+        color: #cbd5e1;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div>
+        <h1>Spotify Dashboard</h1>
+        <p class="muted">Authentifiziere dich und sieh deine Spotify-Highlights auf einen Blick.</p>
+      </div>
+      <div class="login-state" id="loginState">
+        <a class="link-button" href="/login">Login mit Spotify</a>
+      </div>
+    </header>
+
+    <main class="container">
+      <section class="card">
+        <div class="section-title">
+          <h2>Profil</h2>
+          <button id="refreshProfile" aria-label="Profil aktualisieren">Refresh</button>
+        </div>
+        <div id="profileContent" class="muted">Lade Profil ...</div>
+      </section>
+
+      <section class="card" style="margin-top: 16px;">
+        <div class="section-title">
+          <h2>Aktuell laufender Track</h2>
+          <button id="refreshNowPlaying" aria-label="Aktuellen Track aktualisieren">Refresh</button>
+        </div>
+        <div id="nowPlayingContent" class="muted">Keine Daten geladen.</div>
+      </section>
+
+      <div class="grid" style="margin-top: 16px;">
+        <section class="card">
+          <div class="section-title">
+            <h2>Top Tracks (4 Wochen)</h2>
+            <button id="refreshTracks" aria-label="Top Tracks aktualisieren">Refresh</button>
+          </div>
+          <div id="topTracksContent" class="muted">Noch keine Daten.</div>
+        </section>
+
+        <section class="card">
+          <div class="section-title">
+            <h2>Top Artists (4 Wochen)</h2>
+            <button id="refreshArtists" aria-label="Top Artists aktualisieren">Refresh</button>
+          </div>
+          <div id="topArtistsContent" class="muted">Noch keine Daten.</div>
+        </section>
+      </div>
+
+      <section class="card" style="margin-top: 16px;">
+        <div class="section-title">
+          <h2>Playlists</h2>
+          <button id="refreshPlaylists" aria-label="Playlists aktualisieren">Refresh</button>
+        </div>
+        <div id="playlistsContent" class="muted">Noch keine Daten.</div>
+      </section>
+    </main>
+
+    <script>
+      const loginState = document.getElementById('loginState');
+      const profileContent = document.getElementById('profileContent');
+      const nowPlayingContent = document.getElementById('nowPlayingContent');
+      const topTracksContent = document.getElementById('topTracksContent');
+      const topArtistsContent = document.getElementById('topArtistsContent');
+      const playlistsContent = document.getElementById('playlistsContent');
+
+      document.getElementById('refreshProfile').addEventListener('click', loadProfile);
+      document.getElementById('refreshNowPlaying').addEventListener('click', loadNowPlaying);
+      document.getElementById('refreshTracks').addEventListener('click', loadTopTracks);
+      document.getElementById('refreshArtists').addEventListener('click', loadTopArtists);
+      document.getElementById('refreshPlaylists').addEventListener('click', loadPlaylists);
+
+      async function fetchJson(path) {
+        const response = await fetch(path);
+        const contentType = response.headers.get('content-type') || '';
+        const data = contentType.includes('application/json') ? await response.json() : null;
+        return { ok: response.ok, status: response.status, data };
+      }
+
+      function renderLoginState(authenticated, displayName) {
+        if (!authenticated) {
+          loginState.innerHTML = '<a class="link-button" href="/login">Login mit Spotify</a>';
+          return;
+        }
+
+        loginState.innerHTML = `
+          <span class="pill">Eingeloggt als ${displayName || 'Spotify User'}</span>
+          <a class="link-button" href="/logout">Logout</a>
+        `;
+      }
+
+      async function loadProfile() {
+        profileContent.textContent = 'Lade Profil ...';
+        const { ok, status, data } = await fetchJson('/api/me');
+        if (status === 401) {
+          renderLoginState(false);
+          profileContent.innerHTML = 'Bitte zuerst einloggen.';
+          return false;
+        }
+
+        if (!ok || !data) {
+          profileContent.innerHTML = '<p class="error">Profil konnte nicht geladen werden.</p>';
+          return false;
+        }
+
+        renderLoginState(true, data.displayName);
+        const image = data.images && data.images.length > 0 ? data.images[0].url : null;
+        profileContent.innerHTML = `
+          <div class="profile">
+            <img class="avatar" src="${image || ''}" alt="Profilbild" />
+            <div>
+              <h3 style="margin: 0;">${data.displayName || 'Spotify User'}</h3>
+              <p class="muted" style="margin: 4px 0 0;">${data.email || 'Keine E-Mail verfügbar'}</p>
+            </div>
+          </div>
+        `;
+        return true;
+      }
+
+      async function loadNowPlaying() {
+        nowPlayingContent.textContent = 'Lade aktuell laufenden Track ...';
+        const { ok, status, data } = await fetchJson('/api/currently-playing');
+        if (status === 401) {
+          nowPlayingContent.innerHTML = 'Bitte zuerst einloggen.';
+          renderLoginState(false);
+          return;
+        }
+
+        if (!ok || !data || !data.isPlaying) {
+          nowPlayingContent.innerHTML = '<p class="muted">Aktuell läuft kein Track.</p>';
+          return;
+        }
+
+        const percentage = data.durationMs ? Math.min(100, Math.round((data.progressMs / data.durationMs) * 100)) : 0;
+        const safeImage = data.image || '';
+        nowPlayingContent.innerHTML = `
+          <div class="list-item" style="background: rgba(29, 185, 84, 0.08); border-color: rgba(29, 185, 84, 0.2);">
+            <img src="${safeImage}" alt="Cover" />
+            <div style="flex: 1;">
+              <p class="title">${data.title}</p>
+              <p class="subtitle">${data.artists} • ${data.album}</p>
+              <div class="progress"><span style="width: ${percentage}%;"></span></div>
+            </div>
+          </div>
+        `;
+      }
+
+      async function loadTopTracks() {
+        topTracksContent.textContent = 'Lade Top Tracks ...';
+        const { ok, status, data } = await fetchJson('/api/top-tracks');
+        if (status === 401) {
+          topTracksContent.innerHTML = 'Bitte zuerst einloggen.';
+          renderLoginState(false);
+          return;
+        }
+
+        if (!ok || !data) {
+          topTracksContent.innerHTML = '<p class="error">Top Tracks konnten nicht geladen werden.</p>';
+          return;
+        }
+
+        if (data.length === 0) {
+          topTracksContent.innerHTML = '<p class="muted">Keine Tracks gefunden.</p>';
+          return;
+        }
+
+        topTracksContent.innerHTML = data
+          .map(
+            (track) => `
+              <div class="list-item">
+                <img src="${track.image || ''}" alt="${track.name}" />
+                <div>
+                  <p class="title">${track.name}</p>
+                  <p class="subtitle">${track.artists} • ${track.album}</p>
+                </div>
+              </div>
+            `
+          )
+          .join('');
+      }
+
+      async function loadTopArtists() {
+        topArtistsContent.textContent = 'Lade Top Artists ...';
+        const { ok, status, data } = await fetchJson('/api/top-artists');
+        if (status === 401) {
+          topArtistsContent.innerHTML = 'Bitte zuerst einloggen.';
+          renderLoginState(false);
+          return;
+        }
+
+        if (!ok || !data) {
+          topArtistsContent.innerHTML = '<p class="error">Top Artists konnten nicht geladen werden.</p>';
+          return;
+        }
+
+        if (data.length === 0) {
+          topArtistsContent.innerHTML = '<p class="muted">Keine Artists gefunden.</p>';
+          return;
+        }
+
+        topArtistsContent.innerHTML = data
+          .map(
+            (artist) => `
+              <div class="list-item">
+                <img src="${artist.image || ''}" alt="${artist.name}" />
+                <div>
+                  <p class="title">${artist.name}</p>
+                  <p class="subtitle">${artist.genres && artist.genres.length ? artist.genres.join(', ') : 'Keine Genres'}</p>
+                </div>
+              </div>
+            `
+          )
+          .join('');
+      }
+
+      async function loadPlaylists() {
+        playlistsContent.textContent = 'Lade Playlists ...';
+        const { ok, status, data } = await fetchJson('/api/playlists');
+        if (status === 401) {
+          playlistsContent.innerHTML = 'Bitte zuerst einloggen.';
+          renderLoginState(false);
+          return;
+        }
+
+        if (!ok || !data) {
+          playlistsContent.innerHTML = '<p class="error">Playlists konnten nicht geladen werden.</p>';
+          return;
+        }
+
+        if (data.length === 0) {
+          playlistsContent.innerHTML = '<p class="muted">Keine Playlists gefunden.</p>';
+          return;
+        }
+
+        playlistsContent.innerHTML = data
+          .map(
+            (playlist) => `
+              <div class="list-item">
+                <img src="${playlist.image || ''}" alt="${playlist.name}" />
+                <div>
+                  <p class="title">${playlist.name}</p>
+                  <p class="subtitle">${playlist.trackCount} Tracks • ${playlist.owner || 'Unbekannter Owner'}</p>
+                </div>
+              </div>
+            `
+          )
+          .join('');
+      }
+
+      async function loadDashboard() {
+        const hasProfile = await loadProfile();
+        if (hasProfile) {
+          loadNowPlaying();
+          loadTopTracks();
+          loadTopArtists();
+          loadPlaylists();
+        }
+      }
+
+      loadDashboard();
+    </script>
+  </body>
+</html>
