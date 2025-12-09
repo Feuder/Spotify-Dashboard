@@ -157,7 +157,7 @@ async function handleApiRoute(req, res, pathname) {
   const session = getOrCreateSession(req, res);
   if (!session.tokens) {
     return sendJson(res, 401, { error: 'User is not authenticated with Spotify.' });
-  }
+  }t
 
   try {
     switch (pathname) {
